@@ -1,290 +1,290 @@
-# Plan C++ + GPU: fluidos, quant y data science
+# C++ & GPU Computing Roadmap: CFD, Quant Finance and Data Science
 
 Oct 21, 2026 · @Jesus Leobardo Nagao
 
-## Resumen
+## Summary
 
-Son 26 semanas (≈ abril 2027) a 1 hora diaria, en 7 fases. Cada fase termina en un proyecto pequeño publicable en GitHub. El hilo conductor: el mismo kernel de GPU sirve para fluidos y para finanzas, así que lo que aprendes en una fase se reutiliza en la siguiente.
+A 26-week, project-based roadmap (Oct 2026 – Apr 2027) for building high-performance C++ and GPU skills, at one hour per day. It covers 12 projects across 7 phases, from CPU fundamentals to GPU fluid solvers and quantitative finance engines. Each project is split into small milestones with a measurable completion criterion, and each one ships as a documented repository. The common thread: the same GPU patterns (map, reduce, stencil, Monte Carlo) power both aerodynamic simulation and derivatives pricing.
 
-**Ritmo semanal sugerido (5–6 h):**
+**Weekly cadence (5–6 h):**
 
-- Lun–Jue: construir. Un milestone por sesión, más o menos.
-- Vie: terminar el milestone pendiente, actualizar el README y contestar las preguntas de "Al terminar".
-- Sáb (opcional): sesión de data science en Python (ver sección Data science).
+- Mon–Thu: build. Roughly one milestone per session.
+- Fri: close out the pending milestone, update the README, and answer the project's review questions.
+- Sat (optional): data science session in Python (see Data science track).
 
-**Reglas para que funcione con 1 h/día:**
+**Working rules:**
 
-- Deja cada sesión con una nota de "lo siguiente que haré" en el README; así arrancas en 2 minutos al día siguiente.
-- Un solo repositorio monorepo (`cpp-gpu-lab/`) con una carpeta por proyecto y CMake en la raíz. Compila en Mac y en PC desde el día 1.
-- Si un proyecto se alarga, recorta alcance, no la semana siguiente.
-- Hardware: PC con GPU NVIDIA (CUDA) y Mac con Apple Silicon (Metal).
+- End every session with a "next step" note in the README, so the next session starts in two minutes.
+- One monorepo (`cpp-gpu-lab/`) with a folder per project and CMake at the root, building on macOS and Windows from day one.
+- If a project runs long, cut scope rather than pushing the schedule.
+- Hardware: PC with an NVIDIA GPU (CUDA) and a Mac with Apple Silicon (Metal).
 
-## Stack de herramientas
+## Tooling stack
 
-No existe una sola API de GPU que sea "la mejor" en ambas máquinas: la Mac no corre CUDA y la PC no corre Metal. La estrategia es aprender CUDA como lenguaje principal (es el estándar en CFD y en quant), Metal para la Mac, y WebGPU como capa multiplataforma para gráficos.
+No single GPU API runs natively on both machines: macOS does not support CUDA and Windows does not support Metal. The approach: CUDA as the primary compute language (the standard in HPC, CFD and quant finance), Metal for the Mac, and WebGPU as the cross-platform layer for graphics.
 
-| Capa | PC (NVIDIA) | Mac (Apple Silicon) | Por qué |
+| Layer | PC (NVIDIA) | Mac (Apple Silicon) | Rationale |
 | --- | --- | --- | --- |
-| Compilador / build | MSVC o clang + CMake + vcpkg | clang (Xcode CLT) + CMake + Homebrew | CMake es lo que usan todos los proyectos serios |
-| Cómputo GPU | CUDA (nvcc), luego Thrust/CUB | Metal vía metal-cpp | CUDA domina en HPC y finanzas; metal-cpp te deja escribir C++ en vez de Swift |
-| Gráficos | WebGPU (Dawn o wgpu-native) + GLFW | Igual: WebGPU corre sobre Metal | Un solo código de render para ambas; también hace compute |
-| Matemáticas CPU | Eigen | Eigen | Álgebra lineal estándar en C++ |
-| Tests / benchmark | Catch2 + Google Benchmark | Igual | Medir es la mitad del trabajo en GPU |
-| Puente a Python | nanobind o pybind11 | Igual | Para usar tu C++ desde pandas/notebooks |
-| Profiling | Nsight Systems / Nsight Compute | Xcode Instruments (Metal System Trace) | Sin profiler no sabes por qué es lento |
+| Compiler / build | MSVC or clang + CMake + vcpkg | clang (Xcode CLT) + CMake + Homebrew | CMake is the industry-standard build system |
+| GPU compute | CUDA (nvcc), then Thrust/CUB | Metal via metal-cpp | CUDA dominates HPC and finance; metal-cpp keeps the Mac code in C++ |
+| Graphics | WebGPU (Dawn or wgpu-native) + GLFW | Same: WebGPU runs on top of Metal | One rendering codebase for both machines, with compute support |
+| CPU math | Eigen | Eigen | Standard C++ linear algebra library |
+| Testing / benchmarking | Catch2 + Google Benchmark | Same | Measurement is half of GPU work |
+| Python bridge | nanobind or pybind11 | Same | Exposes C++ engines to pandas and notebooks |
+| Profiling | Nsight Systems / Nsight Compute | Xcode Instruments (Metal System Trace) | Performance claims need profiler evidence |
 
-**Por qué no OpenGL:** Apple lo dejó congelado en 4.1 y no tiene compute shaders. Ya lo usaste en Julia, así que WebGPU te da el salto moderno sin perder la Mac. Si prefieres máxima potencia en la PC, Vulkan es la alternativa, pero es mucho más verboso para 1 h/día.
+**Why not OpenGL:** Apple froze it at version 4.1 with no compute shaders. WebGPU is the modern successor that keeps the Mac in play. Vulkan is the alternative for maximum control on the PC, but it is far more verbose for a one-hour daily budget.
 
-## Libros de referencia
+## References
 
-Ninguno es obligatorio: son para consultar cuando un milestone se atore. Los ★ son los más útiles. Ediciones citadas de memoria: verifica la más reciente al comprar.
+None are required reading; they are consulted when a milestone gets stuck. Starred (★) titles are the most useful. Editions are listed from memory; check for the latest before buying.
 
-### C++ moderno y rendimiento
+### Modern C++ and performance
 
-| Libro | Uso en el plan |
+| Reference | Used in |
 | --- | --- |
-| ★ Stroustrup, *A Tour of C++* (3.ª ed., 2022) | Fases 0–1. Tour rápido de C++20 para alguien que ya programa |
-| Meyers, *Effective Modern C++* | Fase 1. Move semantics, smart pointers, lambdas: los errores clásicos |
-| Williams, *C++ Concurrency in Action* (2.ª ed.) | Fase 1, semana de threads. Consulta |
-| Slotin, *Algorithms for Modern Hardware* (gratis en línea) | Caché, SIMD, por qué el código rápido se ve así |
+| ★ Stroustrup, *A Tour of C++* (3rd ed., 2022) | Phases 0–1. Fast tour of C++20 for experienced programmers |
+| Meyers, *Effective Modern C++* | Phase 1. Move semantics, smart pointers, lambdas |
+| Williams, *C++ Concurrency in Action* (2nd ed.) | Phase 1, threading milestones |
+| Slotin, *Algorithms for Modern Hardware* (free online) | Caches, SIMD, why fast code looks the way it does |
 
-### GPU
+### GPU computing
 
-| Libro | Uso en el plan |
+| Reference | Used in |
 | --- | --- |
-| ★ Hwu, Kirk y El Hajj, *Programming Massively Parallel Processors* (4.ª ed., 2022) | Fase 2 en adelante. La biblia de CUDA: tiling, reducciones, scan, stencils |
-| Guía oficial *CUDA C++ Programming Guide* y *Best Practices Guide* (NVIDIA, gratis) | Consulta constante |
-| *Metal Shading Language Specification* + ejemplos de metal-cpp (Apple, gratis) | Fase 2, versión Mac |
-| Michel, *Learn WebGPU for C++* (gratis en línea) | Fase 3. Tutorial paso a paso de render y compute |
-| Akenine-Möller et al., *Real-Time Rendering* (4.ª ed.) | Consulta si te enganchas con gráficos |
+| ★ Hwu, Kirk & El Hajj, *Programming Massively Parallel Processors* (4th ed., 2022) | Phase 2 onward. Tiling, reductions, scans, stencils |
+| NVIDIA, *CUDA C++ Programming Guide* and *Best Practices Guide* (free) | Ongoing reference |
+| Apple, *Metal Shading Language Specification* + metal-cpp samples (free) | Phase 2, Mac ports |
+| Michel, *Learn WebGPU for C++* (free online) | Phase 3. Step-by-step rendering and compute |
+| Akenine-Möller et al., *Real-Time Rendering* (4th ed.) | Optional graphics depth |
 
-### Fluidos y aerodinámica
+### Fluid dynamics and aerodynamics
 
-| Libro | Uso en el plan |
+| Reference | Used in |
 | --- | --- |
-| ★ Bridson, *Fluid Simulation for Computer Graphics* (2.ª ed.) | Fase 3. Stable fluids, grids, presión: muy de implementar |
-| ★ Krüger et al., *The Lattice Boltzmann Method: Principles and Practice* (2017) | Fase 4. LBM es el método más natural para GPU |
-| Ferziger, Perić y Street, *Computational Methods for Fluid Dynamics* (4.ª ed.) | Consulta formal de volúmenes finitos; útil para la maestría |
-| Harris, "Fast Fluid Dynamics Simulation on the GPU", *GPU Gems* cap. 38 (gratis) | Fase 3. Un capítulo, directo al código |
+| ★ Bridson, *Fluid Simulation for Computer Graphics* (2nd ed.) | Phase 3. Stable fluids, grids, pressure projection |
+| ★ Krüger et al., *The Lattice Boltzmann Method: Principles and Practice* (2017) | Phase 4. LBM, the most GPU-friendly CFD method |
+| Ferziger, Perić & Street, *Computational Methods for Fluid Dynamics* (4th ed.) | Formal finite-volume reference |
+| Harris, "Fast Fluid Dynamics Simulation on the GPU", *GPU Gems* ch. 38 (free) | Phase 3. Single chapter, straight to code |
 
-### Finanzas cuantitativas
+### Quantitative finance
 
-| Libro | Uso en el plan |
+| Reference | Used in |
 | --- | --- |
-| ★ Joshi, *C++ Design Patterns and Derivatives Pricing* (2.ª ed.) | Fase 5. Exactamente C++ + pricing; corto y práctico |
-| Hull, *Options, Futures, and Other Derivatives* | Consulta para el lado financiero (Black-Scholes, griegas) |
-| Glasserman, *Monte Carlo Methods in Financial Engineering* | Fase 5. Reducción de varianza, quasi-Monte Carlo |
-| Chan, *Quantitative Trading* (2.ª ed.) | Fase 6. Backtesting honesto, cómo no engañarte |
-| López de Prado, *Advances in Financial Machine Learning* | Fase 6. Puente directo entre quant y ML |
-| Zhou, *A Practical Guide to Quantitative Finance Interviews* | En paralelo, 2–3 problemas por semana si vas en serio por quant |
+| ★ Joshi, *C++ Design Patterns and Derivatives Pricing* (2nd ed.) | Phase 5. C++ and pricing together |
+| Hull, *Options, Futures, and Other Derivatives* | Finance reference (Black-Scholes, Greeks) |
+| Glasserman, *Monte Carlo Methods in Financial Engineering* | Phase 5. Variance reduction, quasi-Monte Carlo |
+| Chan, *Quantitative Trading* (2nd ed.) | Phase 6. Honest backtesting |
+| López de Prado, *Advances in Financial Machine Learning* | Phase 6. Bridge between quant finance and ML |
+| Zhou, *A Practical Guide to Quantitative Finance Interviews* | 2–3 problems per week alongside the plan |
 
 ### Data science
 
-| Libro | Uso en el plan |
+| Reference | Used in |
 | --- | --- |
-| ★ James, Witten, Hastie, Tibshirani y Taylor, *An Introduction to Statistical Learning with Applications in Python* (gratis) | Sesiones de sábado |
-| McKinney, *Python for Data Analysis* (3.ª ed., gratis en línea) | pandas a fondo |
-| Géron, *Hands-On Machine Learning* (edición más reciente) | Cuando pases de modelos clásicos a redes |
+| ★ James, Witten, Hastie, Tibshirani & Taylor, *An Introduction to Statistical Learning with Applications in Python* (free) | Saturday sessions |
+| McKinney, *Python for Data Analysis* (3rd ed., free online) | pandas in depth |
+| Géron, *Hands-On Machine Learning* (latest edition) | Moving from classical models to neural networks |
 
-## Plan semana a semana
+## Roadmap
 
-12 proyectos en 26 semanas. Cada uno tiene un criterio de "terminado" medible: si lo cumples, avanzas aunque el código no sea perfecto.
+12 projects over 26 weeks. Every milestone lists what to research and a measurable *Done when* criterion: meet it and move on, even if the code isn't perfect.
 
-| Fase | Semanas | Tema | Proyectos |
+| Phase | Weeks | Focus | Projects |
 | --- | --- | --- | --- |
-| 0 | 1–2 | Setup y reentrada a C++ | P0 |
-| 1 | 3–6 | C++ moderno y CPU rápido | P1, P2 |
-| 2 | 7–10 | Cómputo en GPU | P3, P4 |
-| 3 | 11–14 | Gráficos + fluidos 2D | P5, P6 |
-| 4 | 15–19 | Aerodinámica con LBM | P7, P8 |
-| 5 | 20–22 | Pricing de derivados en GPU | P9, P10 |
-| 6 | 23–26 | Trading: order book y backtester | P11, P12 |
+| 0 | 1–2 | Setup and C++ ramp-up | P0 |
+| 1 | 3–6 | Modern C++ and fast CPU code | P1, P2 |
+| 2 | 7–10 | GPU compute | P3, P4 |
+| 3 | 11–14 | Graphics and 2D fluids | P5, P6 |
+| 4 | 15–19 | Aerodynamics with Lattice Boltzmann | P7, P8 |
+| 5 | 20–22 | GPU derivatives pricing | P9, P10 |
+| 6 | 23–26 | Trading: order book and backtester | P11, P12 |
 
-### Fase 0 — Setup (semanas 1–2)
+### Phase 0 — Setup (weeks 1–2)
 
-Solo si te atoras: *A Tour of C++* caps. 1–5.
+If stuck: *A Tour of C++* ch. 1–5.
 
-**P0 · Monte Carlo de π** (sem 1–2). Idea: lanza puntos al azar en un cuadrado de 1×1; la fracción que cae dentro del cuarto de círculo × 4 ≈ π. Cada milestone es 1–2 sesiones de 1 h.
+**P0 · Monte Carlo estimation of π** (wk 1–2). Throw random points into a unit square; the fraction inside the quarter circle × 4 ≈ π. Each milestone takes 1–2 one-hour sessions.
 
-- [ ] **M1 · Hola mundo que compila en Mac y PC.** Investiga: `CMakeLists.txt` mínimo, `add_executable`, `target_compile_features(... cxx_std_20)`, compilar fuera del código fuente (`cmake -B build`), `.gitignore` para `build/`. *Logro:* el mismo comando compila y corre en ambas máquinas, y el repo está en GitHub.
-- [ ] **M2 · Primera estimación.** Investiga: `<random>`, `std::mt19937_64`, `std::uniform_real_distribution<double>`, por qué no usar `rand()`. *Logro:* imprime π ≈ 3.14 con N = 10⁶.
-- [ ] **M3 · Argumentos y reproducibilidad.** Investiga: `argc/argv`, `std::stoull`, semilla fija vs `std::random_device`. *Logro:* `./pi 1000000 42` da siempre el mismo número; sin semilla, cambia cada vez.
-- [ ] **M4 · Medir velocidad.** Investiga: `std::chrono::steady_clock`, `duration_cast`, `CMAKE_BUILD_TYPE` Debug vs Release y qué hace `-O2`. *Logro:* imprime muestras por segundo y anotas cuántas veces más rápido corre en Release.
-- [ ] **M5 · Convergencia.** Investiga: `std::ofstream` para escribir CSV, error absoluto vs `std::numbers::pi`. Loop de N = 10² a 10⁸ y grafica en Python. *Logro:* gráfica log-log de error vs N con pendiente ≈ −1/2.
-- [ ] **M6 · Ordenar el código.** Investiga: separar `.hpp`/`.cpp`, `add_library` + `target_link_libraries`, `namespace`, pasar el generador por referencia. *Logro:* `main.cpp` de \~15 líneas que llama a `estimate_pi(n, rng)`.
-- [ ] **M7 · Bonus: varios hilos.** Investiga: `std::thread` o `std::async` + `std::future`, `std::thread::hardware_concurrency`, por qué cada hilo necesita su propio generador. *Logro:* tabla de tiempo vs número de hilos (1, 2, 4, 8…).
+- [ ] **M1 · Hello world on Mac and PC.** Research: minimal `CMakeLists.txt`, `add_executable`, `target_compile_features(... cxx_std_20)`, out-of-source builds (`cmake -B build`), `.gitignore` for `build/`. *Done when:* the same command builds and runs on both machines and the repo is on GitHub.
+- [ ] **M2 · First estimate.** Research: `<random>`, `std::mt19937_64`, `std::uniform_real_distribution<double>`, why not `rand()`. *Done when:* it prints π ≈ 3.14 for N = 10⁶.
+- [ ] **M3 · Arguments and reproducibility.** Research: `argc/argv`, `std::stoull`, fixed seed vs `std::random_device`. *Done when:* `./pi 1000000 42` always returns the same value; without a seed it varies.
+- [ ] **M4 · Measure speed.** Research: `std::chrono::steady_clock`, `duration_cast`, `CMAKE_BUILD_TYPE` Debug vs Release, what `-O2` does. *Done when:* it prints samples per second and you record the Release speedup.
+- [ ] **M5 · Convergence.** Research: `std::ofstream` to write CSV, absolute error vs `std::numbers::pi`. Sweep N from 10² to 10⁸ and plot in Python. *Done when:* a log-log plot of error vs N shows slope ≈ −1/2.
+- [ ] **M6 · Clean structure.** Research: `.hpp`/`.cpp` split, `add_library` + `target_link_libraries`, `namespace`, passing the generator by reference. *Done when:* `main.cpp` is \~15 lines calling `estimate_pi(n, rng)`.
+- [ ] **M7 · Bonus: multiple threads.** Research: `std::thread` or `std::async` + `std::future`, `std::thread::hardware_concurrency`, why each thread needs its own generator. *Done when:* a table of runtime vs thread count (1, 2, 4, 8…).
 
-**Al terminar deberías poder explicar:** qué hace CMake y qué hace el compilador; por qué Release es más rápido; por qué el error cae como 1/√N; qué pasa si dos hilos comparten un generador.
+*Review questions:* What does CMake do versus the compiler? Why is Release faster? Why does the error fall as 1/√N? What happens if two threads share a generator?
 
-### Fase 1 — C++ moderno (semanas 3–6)
+### Phase 1 — Modern C++ (weeks 3–6)
 
-Solo si te atoras: *Tour* caps. 6–13; *Effective Modern C++* ítems 1–30 salteados según lo que uses.
+If stuck: *A Tour of C++* ch. 6–13; *Effective Modern C++* items 1–30 as needed.
 
-**P1 · Mini librería de álgebra lineal** (sem 3–4). Tu propio `Vector` y `Matrix`; la reusarás en P2 y P4.
+**P1 · Mini linear algebra library** (wk 3–4). Custom `Vector` and `Matrix` types, reused in P2 and P4.
 
-- [ ] **M1 · Vector genérico.** Investiga: `template<typename T>`, `std::vector<T>` como almacenamiento, `operator[]`, `std::size_t`. *Logro:* `Vector<double> v(3); v[0] = 1.0;` compila y funciona.
-- [ ] **M2 · Operadores.** Investiga: sobrecarga de `operator+`, `-`, `*` (escalar), métodos `dot()` y `norm()`, `const` correctness, pasar por `const&`. *Logro:* `auto c = a + 2.0 * b;` da el resultado correcto.
-- [ ] **M3 · Tests.** Investiga: Catch2 con `FetchContent`, `TEST_CASE`, `REQUIRE`, `Catch::Approx`, `ctest`. *Logro:* `ctest` en verde con ≥10 tests.
-- [ ] **M4 · Matriz.** Investiga: almacenamiento row-major (`i*cols + j`), `operator()(i, j)`, multiplicación naive. *Logro:* test `A * I == A` y `A * B` contra un caso calculado a mano.
-- [ ] **M5 · Copias vs moves.** Investiga: constructor de copia y de movimiento, rule of zero/five, `std::move`. Pon un `std::cout` en cada constructor. *Logro:* explicas cuántas copias hace `c = a + b` y logras bajarlas.
-- [ ] **M6 · Benchmark.** Investiga: Google Benchmark, orden de loops `ijk` vs `ikj`, caché de CPU, Eigen vía `FetchContent` o vcpkg. FLOPs de matmul = 2n³. *Logro:* tabla GFLOP/s de naive, loops reordenados y Eigen para n = 256, 512, 1024.
+- [ ] **M1 · Generic vector.** Research: `template<typename T>`, `std::vector<T>` as storage, `operator[]`, `std::size_t`. *Done when:* `Vector<double> v(3); v[0] = 1.0;` compiles and works.
+- [ ] **M2 · Operators.** Research: overloading `operator+`, `-`, scalar `*`, `dot()` and `norm()` methods, const correctness, pass by `const&`. *Done when:* `auto c = a + 2.0 * b;` gives the correct result.
+- [ ] **M3 · Tests.** Research: Catch2 via `FetchContent`, `TEST_CASE`, `REQUIRE`, `Catch::Approx`, `ctest`. *Done when:* `ctest` passes with ≥10 tests.
+- [ ] **M4 · Matrix.** Research: row-major storage (`i*cols + j`), `operator()(i, j)`, naive multiplication. *Done when:* tests for `A * I == A` and `A * B` against a hand-computed case pass.
+- [ ] **M5 · Copies vs moves.** Research: copy and move constructors, rule of zero/five, `std::move`. Add a `std::cout` to each constructor. *Done when:* you can explain how many copies `c = a + b` makes, and reduce them.
+- [ ] **M6 · Benchmark.** Research: Google Benchmark, `ijk` vs `ikj` loop order, CPU caches, Eigen via `FetchContent` or vcpkg. Matmul FLOPs = 2n³. *Done when:* a GFLOP/s table for naive, reordered loops and Eigen at n = 256, 512, 1024.
 
-*Al terminar deberías poder explicar:* por qué `ikj` es más rápido que `ijk`; qué es instanciar un template; cuándo un move evita trabajo.
+*Review questions:* Why is `ikj` faster than `ijk`? What is template instantiation? When does a move avoid work?
 
-**P2 · N-body gravitacional** (sem 5–6).
+**P2 · Gravitational N-body** (wk 5–6).
 
-- [ ] **M1 · Fuerzas.** Investiga: `struct Body` con posición, velocidad y masa; suma de fuerzas O(n²); softening para evitar división entre cero. *Logro:* dos cuerpos en órbita circular estable.
-- [ ] **M2 · Integrador.** Investiga: Euler explícito vs leapfrog (velocity Verlet), energía cinética + potencial. *Logro:* gráfica de energía vs tiempo donde Euler deriva y leapfrog se mantiene en <0.1 %.
-- [ ] **M3 · Ver lo que pasa.** Investiga: escribir posiciones a CSV y animar con `matplotlib.animation`. *Logro:* GIF del problema de 3 cuerpos en "figura 8".
-- [ ] **M4 · Hilos a mano.** Investiga: `std::thread`, dividir el rango de `i` entre hilos, `join`, data races y por qué paralelizar el loop externo es seguro. *Logro:* tabla de speedup con 1–8 hilos para n = 2000.
-- [ ] **M5 · OpenMP.** Investiga: `#pragma omp parallel for`, `find_package(OpenMP)` (en Mac: `brew install libomp`; las execution policies de `std::execution` no están en el libc++ de Apple). *Logro:* comparación hilos a mano vs OpenMP.
-- [ ] **M6 · Layout de memoria.** Investiga: Array of Structs vs Struct of Arrays. *Logro:* misma simulación en SoA y diferencia de tiempo medida. Esto prepara la GPU.
+- [ ] **M1 · Forces.** Research: `struct Body` with position, velocity and mass; O(n²) force summation; softening to avoid division by zero. *Done when:* two bodies hold a stable circular orbit.
+- [ ] **M2 · Integrator.** Research: explicit Euler vs leapfrog (velocity Verlet), kinetic + potential energy. *Done when:* an energy-vs-time plot where Euler drifts and leapfrog stays within 0.1 %.
+- [ ] **M3 · Visualize.** Research: write positions to CSV, animate with `matplotlib.animation`. *Done when:* a GIF of the figure-eight three-body orbit.
+- [ ] **M4 · Manual threading.** Research: `std::thread`, splitting the `i` range across threads, `join`, data races, why the outer loop is safe to parallelize. *Done when:* a speedup table for 1–8 threads at n = 2000.
+- [ ] **M5 · OpenMP.** Research: `#pragma omp parallel for`, `find_package(OpenMP)` (on Mac: `brew install libomp`; Apple's libc++ lacks `std::execution` policies). *Done when:* manual threads vs OpenMP comparison.
+- [ ] **M6 · Memory layout.** Research: Array of Structs vs Struct of Arrays. *Done when:* the same simulation in SoA with the measured difference. This sets up the GPU phase.
 
-*Al terminar deberías poder explicar:* qué es una data race; por qué leapfrog conserva energía; por qué SoA le gusta al hardware.
+*Review questions:* What is a data race? Why does leapfrog conserve energy? Why does hardware prefer SoA?
 
-### Fase 2 — Cómputo en GPU (semanas 7–10)
+### Phase 2 — GPU compute (weeks 7–10)
 
-Solo si te atoras: *PMPP* caps. 1–6 y 10 (reducciones).
+If stuck: *Programming Massively Parallel Processors* ch. 1–6 and 10 (reductions).
 
-**P3 · Kernels fundamentales** (sem 7–9). Los 4 patrones que aparecen en todo: map, reducción, matmul y el mismo código en otra API.
+**P3 · Core GPU kernels** (wk 7–9). The four patterns that show up everywhere: map, reduction, matrix multiply, and the same code on a second API.
 
-- [ ] **M1 · Primer kernel.** Investiga: `project(... LANGUAGES CXX CUDA)`, `CMAKE_CUDA_ARCHITECTURES`, archivos `.cu`, `__global__`, `printf` dentro del kernel, `threadIdx`/`blockIdx`. *Logro:* un kernel imprime el id de cada hilo.
-- [ ] **M2 · SAXPY.** Investiga: `cudaMalloc`, `cudaMemcpy`, `<<<bloques, hilos>>>`, cálculo de índice global, macro para revisar errores de CUDA, `cudaEvent` para medir. *Logro:* `y = a*x + y` con 10⁸ elementos correcto, y el ancho de banda logrado en GB/s vs el teórico de tu tarjeta.
-- [ ] **M3 · Memoria unificada.** Investiga: `cudaMallocManaged` vs copias explícitas. *Logro:* SAXPY de las dos formas y explicas cuándo conviene cada una.
-- [ ] **M4 · Reducción.** Investiga: `__shared__`, `__syncthreads()`, reducción en árbol, `__shfl_down_sync`, `atomicAdd`. *Logro:* suma de 10⁸ números igual a la de CPU (cuidado con float vs double), con 3 versiones cada vez más rápidas.
-- [ ] **M5 · Matmul.** Investiga: versión naive, tiling en shared memory (16×16), coalescing de memoria, cuBLAS como referencia. *Logro:* tiled ≥5× la naive y qué % de cuBLAS alcanzas.
-- [ ] **M6 · Lo mismo en Metal (sem 9).** Investiga: metal-cpp, `MTL::Device`, archivo `.metal`, compute pipeline, command buffer y encoder, `threadgroup` memory (el equivalente a shared). *Logro:* SAXPY y matmul tiled corriendo en la Mac; tabla CPU vs CUDA vs Metal.
+- [ ] **M1 · First kernel.** Research: `project(... LANGUAGES CXX CUDA)`, `CMAKE_CUDA_ARCHITECTURES`, `.cu` files, `__global__`, in-kernel `printf`, `threadIdx`/`blockIdx`. *Done when:* a kernel prints every thread's id.
+- [ ] **M2 · SAXPY.** Research: `cudaMalloc`, `cudaMemcpy`, `<<<blocks, threads>>>`, global index calculation, a CUDA error-check macro, `cudaEvent` timing. *Done when:* `y = a*x + y` on 10⁸ elements is correct, and achieved bandwidth (GB/s) is compared against the card's theoretical peak.
+- [ ] **M3 · Unified memory.** Research: `cudaMallocManaged` vs explicit copies. *Done when:* SAXPY both ways, with a note on when each fits.
+- [ ] **M4 · Reduction.** Research: `__shared__`, `__syncthreads()`, tree reduction, `__shfl_down_sync`, `atomicAdd`. *Done when:* the sum of 10⁸ numbers matches the CPU result (mind float vs double), across 3 progressively faster versions.
+- [ ] **M5 · Matrix multiply.** Research: naive version, shared-memory tiling (16×16), memory coalescing, cuBLAS as the baseline. *Done when:* tiled is ≥5× faster than naive, and its % of cuBLAS is reported.
+- [ ] **M6 · Port to Metal (wk 9).** Research: metal-cpp, `MTL::Device`, `.metal` shader files, compute pipeline, command buffer and encoder, `threadgroup` memory (the shared-memory equivalent). *Done when:* SAXPY and tiled matmul run on the Mac; CPU vs CUDA vs Metal table.
 
-*Al terminar deberías poder explicar:* qué son un warp, un bloque y un grid; por qué el acceso coalescido importa; qué limita a SAXPY (memoria) y qué limita a matmul (cómputo).
+*Review questions:* What are a warp, a block and a grid? Why does coalesced access matter? What limits SAXPY (memory) versus matmul (compute)?
 
-**P4 · Ecuación de calor 2D en GPU** (sem 10).
+**P4 · 2D heat equation on the GPU** (wk 10).
 
-- [ ] **M1 · Referencia en CPU.** Investiga: stencil de 5 puntos, condición de estabilidad dt ≤ dx²/(4α). Usa tu `Matrix` de P1. *Logro:* solución CPU que se difunde como esperas.
-- [ ] **M2 · Kernel 2D.** Investiga: `dim3` para bloques 2D, dos buffers que se intercambian cada paso (ping-pong), fronteras. *Logro:* diferencia máxima vs CPU < 10⁻¹².
-- [ ] **M3 · Tiling con halo.** Investiga: cargar un bloque + bordes a shared memory. *Logro:* speedup medido vs el kernel simple.
-- [ ] **M4 · Versión Metal.** *Logro:* mismos números en la Mac.
+- [ ] **M1 · CPU reference.** Research: 5-point stencil, stability condition dt ≤ dx²/(4α). Reuse the P1 `Matrix`. *Done when:* a CPU solution that diffuses as expected.
+- [ ] **M2 · 2D kernel.** Research: `dim3` for 2D blocks, ping-pong buffers swapped each step, boundary handling. *Done when:* max difference vs CPU < 10⁻¹².
+- [ ] **M3 · Tiling with halo.** Research: loading a tile plus its borders into shared memory. *Done when:* measured speedup over the simple kernel.
+- [ ] **M4 · Metal version.** *Done when:* identical results on the Mac.
 
-*Al terminar deberías poder explicar:* por qué los stencils están limitados por memoria; qué pasa si violas la condición de estabilidad.
+*Review questions:* Why are stencils memory-bound? What happens when the stability condition is violated?
 
-### Fase 3 — Gráficos y fluidos 2D (semanas 11–14)
+### Phase 3 — Graphics and 2D fluids (weeks 11–14)
 
-Solo si te atoras: *Learn WebGPU for C++* (secciones básicas y compute); *Bridson* caps. 1–5; *GPU Gems* cap. 38.
+If stuck: *Learn WebGPU for C++* (basics and compute sections); Bridson ch. 1–5; *GPU Gems* ch. 38.
 
-**P5 · Visualizador en vivo** (sem 11–12). Nota: pasar datos de CUDA a WebGPU es complicado, así que la simulación visual corre en compute shaders de WebGPU; CUDA queda para el cómputo pesado sin ventana.
+**P5 · Real-time visualizer** (wk 11–12). Sharing buffers between CUDA and WebGPU is complex, so the interactive simulations run as WebGPU compute shaders; CUDA stays for heavy offline compute.
 
-- [ ] **M1 · Ventana.** Investiga: GLFW, Dawn o wgpu-native (el repo de *Learn WebGPU for C++* trae el CMake listo), `glfw3webgpu` para la surface. *Logro:* ventana con un color de fondo en Mac y PC.
-- [ ] **M2 · Triángulo.** Investiga: render pipeline, shaders de vértice y fragmento en WGSL, vertex buffer. *Logro:* el clásico triángulo de colores.
-- [ ] **M3 · Textura en pantalla.** Investiga: quad de pantalla completa, `queue.writeTexture`, sampler, bind groups. *Logro:* mostrar una imagen generada en CPU.
-- [ ] **M4 · Colormap.** Investiga: mapear un escalar a color en el fragment shader (aproximación de viridis). *Logro:* el campo sin(x)·cos(y) se ve con colores.
-- [ ] **M5 · Simulación en GPU.** Investiga: compute pipeline, storage buffers, ping-pong en WGSL. Porta el stencil de P4. *Logro:* difusión de calor en vivo a ≥60 fps en ambas máquinas.
-- [ ] **M6 · Interacción.** Investiga: callbacks de mouse de GLFW, Dear ImGui con backend WebGPU. *Logro:* pintas calor con el click y un slider cambia α en vivo.
+- [ ] **M1 · Window.** Research: GLFW, Dawn or wgpu-native (the *Learn WebGPU for C++* repo ships a working CMake setup), `glfw3webgpu` for the surface. *Done when:* a window clears to a color on Mac and PC.
+- [ ] **M2 · Triangle.** Research: render pipeline, WGSL vertex and fragment shaders, vertex buffers. *Done when:* the classic colored triangle renders.
+- [ ] **M3 · Texture on screen.** Research: full-screen quad, `queue.writeTexture`, samplers, bind groups. *Done when:* a CPU-generated image is displayed.
+- [ ] **M4 · Colormap.** Research: mapping a scalar to color in the fragment shader (viridis approximation). *Done when:* the field sin(x)·cos(y) renders in color.
+- [ ] **M5 · GPU simulation.** Research: compute pipelines, storage buffers, ping-pong in WGSL. Port the P4 stencil. *Done when:* live heat diffusion at ≥60 fps on both machines.
+- [ ] **M6 · Interaction.** Research: GLFW mouse callbacks, Dear ImGui with the WebGPU backend. *Done when:* clicking paints heat and a slider changes α live.
 
-*Al terminar deberías poder explicar:* la diferencia entre render pipeline y compute pipeline; qué es un bind group.
+*Review questions:* What is the difference between a render pipeline and a compute pipeline? What is a bind group?
 
-**P6 · Stable Fluids (Stam) en GPU** (sem 13–14). Reutiliza toda la infraestructura de P5.
+**P6 · Stable Fluids (Stam) on the GPU** (wk 13–14). Builds on the P5 infrastructure.
 
-- [ ] **M1 · Campos.** Investiga: guardar velocidad (u, v), presión y tinta en buffers con ping-pong. *Logro:* estructura lista y tinta visible.
-- [ ] **M2 · Advección.** Investiga: advección semi-lagrangiana (rastrear hacia atrás), interpolación bilineal. *Logro:* la tinta se mueve con un campo de velocidad fijo.
-- [ ] **M3 · Fuerzas.** Investiga: convertir el arrastre del mouse en velocidad. *Logro:* puedes "empujar" el fluido.
-- [ ] **M4 · Proyección.** Investiga: divergencia, Jacobi para la presión, restar el gradiente. Es lo mismo que tu Chorin en Julia. *Logro:* la divergencia máxima tras proyectar es ≈ 0 (mídela y muéstrala en ImGui).
-- [ ] **M5 · Pulido.** Investiga: vorticity confinement, condiciones de frontera, obstáculos. *Logro:* 512×512 estable a 60 fps con un obstáculo en medio.
+- [ ] **M1 · Fields.** Research: storing velocity (u, v), pressure and dye in ping-pong buffers. *Done when:* the data structures are in place and dye is visible.
+- [ ] **M2 · Advection.** Research: semi-Lagrangian advection (backtracing), bilinear interpolation. *Done when:* dye moves along a fixed velocity field.
+- [ ] **M3 · Forces.** Research: converting mouse drag into velocity. *Done when:* the fluid can be pushed around.
+- [ ] **M4 · Projection.** Research: divergence, Jacobi iteration for pressure, gradient subtraction (the same Chorin projection used in the Julia solver). *Done when:* max divergence after projection is ≈ 0, measured and shown in ImGui.
+- [ ] **M5 · Polish.** Research: vorticity confinement, boundary conditions, obstacles. *Done when:* a 512×512 grid runs stably at 60 fps with an obstacle.
 
-*Al terminar deberías poder explicar:* por qué la advección semi-lagrangiana es incondicionalmente estable; qué pierde Stable Fluids frente a un solver de CFD real.
+*Review questions:* Why is semi-Lagrangian advection unconditionally stable? What does Stable Fluids give up compared with a production CFD solver?
 
-### Fase 4 — Aerodinámica con Lattice Boltzmann (semanas 15–19)
+### Phase 4 — Aerodynamics with Lattice Boltzmann (weeks 15–19)
 
-Solo si te atoras: *Krüger* caps. 1–5 (BGK, condiciones de frontera), 7 (fuerzas).
+If stuck: Krüger et al. ch. 1–5 (BGK, boundary conditions) and 7 (forces).
 
-**P7 · LBM D2Q9: cilindro** (sem 15–16).
+**P7 · LBM D2Q9: flow past a cylinder** (wk 15–16).
 
-- [ ] **M1 · LBM mínimo en CPU.** Investiga: las 9 velocidades y pesos de D2Q9, distribución de equilibrio, colisión BGK, relación ν = (τ − 0.5)/3. *Logro:* flujo de Poiseuille en un canal que coincide con el perfil parabólico analítico.
-- [ ] **M2 · Port a CUDA.** Investiga: un hilo por nodo, layout SoA `f[q][nodo]`, streaming tipo pull vs push. *Logro:* mismo Poiseuille en GPU y tu primer número de MLUPS.
-- [ ] **M3 · Cilindro.** Investiga: máscara de obstáculo, bounce-back half-way, entrada de velocidad (Zou-He) y salida. *Logro:* flujo estable y simétrico a Re = 20.
-- [ ] **M4 · Ver la vorticidad.** Investiga: rotacional discreto; copiar el campo al host y subirlo como textura a P5, o escribir PNGs con `stb_image_write`. *Logro:* calle de vórtices de von Kármán a Re = 100.
-- [ ] **M5 · Strouhal.** Investiga: registrar v en un punto detrás del cilindro, FFT con numpy. *Logro:* St ≈ 0.16–0.2.
+- [ ] **M1 · Minimal CPU LBM.** Research: the 9 velocities and weights of D2Q9, equilibrium distribution, BGK collision, the relation ν = (τ − 0.5)/3. *Done when:* Poiseuille channel flow matches the analytical parabolic profile.
+- [ ] **M2 · CUDA port.** Research: one thread per node, SoA layout `f[q][node]`, pull vs push streaming. *Done when:* the same Poiseuille result on the GPU, plus a first MLUPS figure.
+- [ ] **M3 · Cylinder.** Research: obstacle mask, half-way bounce-back, velocity inlet (Zou-He) and outlet. *Done when:* steady, symmetric flow at Re = 20.
+- [ ] **M4 · Vorticity view.** Research: discrete curl; copy the field to host and upload it as a P5 texture, or write PNGs with `stb_image_write`. *Done when:* a von Kármán vortex street at Re = 100.
+- [ ] **M5 · Strouhal number.** Research: probe v at a point behind the cylinder, FFT with numpy. *Done when:* St ≈ 0.16–0.2.
 
-*Al terminar deberías poder explicar:* cómo LBM recupera Navier-Stokes; por qué τ cerca de 0.5 se vuelve inestable.
+*Review questions:* How does LBM recover Navier-Stokes? Why does τ near 0.5 become unstable?
 
-**P8 · NACA 4412 en LBM** (sem 17–18). La pieza para la aplicación a Southampton.
+**P8 · NACA 4412 airfoil in LBM** (wk 17–18). The flagship aerospace portfolio piece.
 
-- [ ] **M1 · Geometría.** Investiga: ecuaciones del perfil NACA de 4 dígitos, rotación por ángulo de ataque, prueba punto-dentro-de-polígono. *Logro:* máscara del perfil visualmente correcta a 0° y 10°.
-- [ ] **M2 · Fuerzas.** Investiga: momentum exchange en los enlaces de bounce-back. Valida primero con el cilindro. *Logro:* Cd del cilindro a Re = 20 cercano al valor de referencia (\~2).
-- [ ] **M3 · Polar.** Investiga: barrido de α de −4° a 12°, cuánto tarda en estabilizarse cada caso. LBM 2D en GPU funciona bien a Re bajos (\~10³); usa el mismo Re en tu solver de Julia. *Logro:* curvas Cl vs α y Cd vs α.
-- [ ] **M4 · Comparación.** *Logro:* gráfica LBM vs tu solver Julia vs datos de referencia, y un README que explique las diferencias.
+- [ ] **M1 · Geometry.** Research: NACA 4-digit airfoil equations, rotation by angle of attack, point-in-polygon test. *Done when:* the airfoil mask is visually correct at 0° and 10°.
+- [ ] **M2 · Forces.** Research: momentum exchange on bounce-back links. Validate on the cylinder first. *Done when:* cylinder Cd at Re = 20 is close to the reference value (\~2).
+- [ ] **M3 · Polar.** Research: sweeping α from −4° to 12°, settling time per case. 2D GPU LBM works best at low Re (\~10³); run the Julia solver at the same Re. *Done when:* Cl vs α and Cd vs α curves.
+- [ ] **M4 · Comparison.** *Done when:* a plot of LBM vs the Julia finite-difference solver vs reference data, with a README explaining the differences.
 
-**Semana 19 · Optimización**
+**Week 19 · Performance optimization**
 
-- [ ] **M1 · Perfilar.** Investiga: Nsight Systems para la línea de tiempo y Nsight Compute para occupancy y throughput de memoria. *Logro:* identificas el cuello de botella.
-- [ ] **M2 · Acelerar.** Investiga: fusionar streaming + colisión en un kernel, float vs double, esquema AA o esoteric twist para ahorrar memoria. *Logro:* MLUPS antes y después.
-- [ ] **M3 · Mac.** Porta el kernel a Metal. *Logro:* tabla de MLUPS Mac vs PC.
+- [ ] **M1 · Profile.** Research: Nsight Systems for the timeline, Nsight Compute for occupancy and memory throughput. *Done when:* the bottleneck is identified.
+- [ ] **M2 · Speed up.** Research: fused stream-collide kernel, float vs double, AA pattern or esoteric twist to halve memory. *Done when:* MLUPS before and after.
+- [ ] **M3 · Mac.** Port the kernel to Metal. *Done when:* MLUPS table for Mac vs PC.
 
-### Fase 5 — Pricing de derivados en GPU (semanas 20–22)
+### Phase 5 — GPU derivatives pricing (weeks 20–22)
 
-Solo si te atoras: *Joshi* caps. 1–8; *Hull* caps. de Black-Scholes y griegas; *Glasserman* cap. 4 (reducción de varianza).
+If stuck: Joshi ch. 1–8; Hull's chapters on Black-Scholes and the Greeks; Glasserman ch. 4 (variance reduction).
 
-**P9 · Monte Carlo de opciones europeas** (sem 20–21). Es tu P0 con esteroides: misma idea, ahora con dinero.
+**P9 · Monte Carlo pricing of European options** (wk 20–21). P0 scaled up: same idea, now applied to pricing.
 
-- [ ] **M1 · Black-Scholes cerrado.** Investiga: fórmula de call y put, `std::erfc` para la normal acumulada, paridad put-call. *Logro:* tus precios coinciden con una calculadora en línea y la paridad se cumple en un test.
-- [ ] **M2 · Griegas.** Investiga: delta, gamma, vega analíticas vs diferencias finitas. *Logro:* ambas coinciden hasta 4 decimales.
-- [ ] **M3 · Monte Carlo en CPU.** Investiga: movimiento browniano geométrico, paso exacto S\_T = S₀·exp((r − σ²/2)T + σ√T·Z), `std::normal_distribution`, error estándar. *Logro:* el precio cae dentro de 2 errores estándar del analítico.
-- [ ] **M4 · Monte Carlo en CUDA.** Investiga: cuRAND (`curand_init` por hilo, `curand_normal`), reusar tu reducción de P3. *Logro:* 10⁸ trayectorias y speedup vs CPU.
-- [ ] **M5 · Reducción de varianza.** Investiga: variables antitéticas, variable de control (el subyacente o la fórmula cerrada). *Logro:* gráfica error vs tiempo de cómputo para CPU, GPU y GPU con reducción de varianza.
+- [ ] **M1 · Closed-form Black-Scholes.** Research: call and put formulas, `std::erfc` for the normal CDF, put-call parity. *Done when:* prices match an online calculator and parity holds in a test.
+- [ ] **M2 · Greeks.** Research: analytical delta, gamma and vega vs finite differences. *Done when:* both agree to 4 decimal places.
+- [ ] **M3 · CPU Monte Carlo.** Research: geometric Brownian motion, exact step S\_T = S₀·exp((r − σ²/2)T + σ√T·Z), `std::normal_distribution`, standard error. *Done when:* the price falls within 2 standard errors of the analytical value.
+- [ ] **M4 · CUDA Monte Carlo.** Research: cuRAND (`curand_init` per thread, `curand_normal`), reusing the P3 reduction. *Done when:* 10⁸ paths with measured speedup over CPU.
+- [ ] **M5 · Variance reduction.** Research: antithetic variates, control variates (the underlying or the closed form). *Done when:* an error-vs-compute-time plot for CPU, GPU and GPU with variance reduction.
 
-*Al terminar deberías poder explicar:* por qué se usa la medida neutral al riesgo; por qué las antitéticas reducen varianza.
+*Review questions:* Why price under the risk-neutral measure? Why do antithetic variates reduce variance?
 
-**P10 · Exóticas + puente a Python** (sem 22).
+**P10 · Exotic options and a Python bridge** (wk 22).
 
-- [ ] **M1 · Dependientes de trayectoria.** Investiga: discretizar la trayectoria en pasos, opción asiática aritmética (con la geométrica cerrada como variable de control), barrera down-and-out. *Logro:* la barrera converge a su fórmula cerrada al aumentar los pasos.
-- [ ] **M2 · nanobind.** Investiga: crear un módulo, recibir y devolver arrays de numpy, integrarlo en CMake. *Logro:* `import pricer` funciona en un notebook.
-- [ ] **M3 · Superficie.** *Logro:* gráfica 3D de precio vs strike y vencimiento hecha desde Python con tu motor en C++.
+- [ ] **M1 · Path-dependent payoffs.** Research: time-stepped paths, arithmetic Asian options (with the closed-form geometric Asian as a control variate), down-and-out barriers. *Done when:* the barrier price converges to its closed form as the step count increases.
+- [ ] **M2 · nanobind.** Research: building a module, passing numpy arrays in and out, CMake integration. *Done when:* `import pricer` works in a notebook.
+- [ ] **M3 · Price surface.** *Done when:* a 3D plot of price vs strike and maturity, produced from Python on top of the C++ engine.
 
-*Al terminar deberías poder explicar:* por qué las exóticas casi siempre se valúan por Monte Carlo; qué sesgo mete discretizar una barrera.
+*Review questions:* Why are exotics usually priced by Monte Carlo? What bias does discrete barrier monitoring introduce?
 
-### Fase 6 — Trading (semanas 23–26)
+### Phase 6 — Trading systems (weeks 23–26)
 
-Solo si te atoras: *Chan* caps. 1–3; *López de Prado* caps. 2–3 y 7 (barras, etiquetado, validación cruzada purgada).
+If stuck: Chan ch. 1–3; López de Prado ch. 2–3 and 7 (bars, labeling, purged cross-validation).
 
-**P11 · Limit order book** (sem 23). El corazón de cualquier exchange; pregunta clásica de entrevista quant/dev.
+**P11 · Limit order book** (wk 23). The core of every exchange and a classic quant-developer interview topic.
 
-- [ ] **M1 · Tipos.** Investiga: `struct Order` (id, lado, precio, cantidad, timestamp), por qué los precios van en enteros (ticks) y no en `double`, `enum class`. *Logro:* tipos definidos con tests.
-- [ ] **M2 · Libro.** Investiga: `std::map<precio, std::deque<Order>>` para bids (orden descendente) y asks, `std::unordered_map` de id → posición para cancelar rápido. *Logro:* add y cancel funcionan con tests.
-- [ ] **M3 · Matching.** Investiga: prioridad precio-tiempo, ejecuciones parciales, emitir trades. *Logro:* tests de 5 escenarios (cruce completo, parcial, varios niveles, cancelación, libro vacío).
-- [ ] **M4 · Latencia.** Investiga: generador de mensajes sintéticos, medir cada operación con `chrono`, percentiles. *Logro:* procesa ≥1 millón de mensajes y reporta p50/p99.
-- [ ] **M5 · Bonus.** Investiga: reemplazar el `map` por un arreglo indexado por nivel de precio. *Logro:* mejora medida en p99.
+- [ ] **M1 · Types.** Research: `struct Order` (id, side, price, quantity, timestamp), why prices are stored as integer ticks rather than `double`, `enum class`. *Done when:* types are defined and tested.
+- [ ] **M2 · Book.** Research: `std::map<price, std::deque<Order>>` for bids (descending) and asks, `std::unordered_map` from id to position for fast cancels. *Done when:* add and cancel pass their tests.
+- [ ] **M3 · Matching engine.** Research: price-time priority, partial fills, trade reporting. *Done when:* tests cover 5 scenarios (full cross, partial fill, multi-level sweep, cancel, empty book).
+- [ ] **M4 · Latency.** Research: synthetic message generator, per-operation `chrono` timing, percentiles. *Done when:* ≥1 million messages processed with p50/p99 latency reported.
+- [ ] **M5 · Bonus.** Research: replacing the `map` with an array indexed by price level. *Done when:* measured p99 improvement.
 
-*Al terminar deberías poder explicar:* por qué no se usan `double` para precios; qué estructura usarías en producción y por qué.
+*Review questions:* Why not use `double` for prices? Which data structure would a production system use, and why?
 
-**P12 · Backtester event-driven** (sem 24–26).
+**P12 · Event-driven backtester** (wk 24–26).
 
-- [ ] **M1 · Datos.** Investiga: bajar precios diarios con `yfinance` a CSV, parser de CSV en C++. *Logro:* cargas 10 años de varios tickers.
-- [ ] **M2 · Motor de eventos.** Investiga: `std::variant` para eventos (mercado, señal, orden, fill), `std::visit`, una cola de eventos. *Logro:* el loop recorre todos los datos sin estrategia.
-- [ ] **M3 · Estrategia y portafolio.** Investiga: interfaz de estrategia (clase virtual o concept de C++20), cruce de medias móviles, PnL y posición. *Logro:* curva de equity.
-- [ ] **M4 · Realismo.** Investiga: comisiones, slippage, look-ahead bias (escribe un test que lo detecte). *Logro:* curva de equity con y sin costos lado a lado.
-- [ ] **M5 · Análisis en Python.** Investiga: exponer el motor con nanobind, Sharpe, max drawdown, validación walk-forward. *Logro:* reporte en notebook con una sección honesta de por qué podría ser sobreajuste.
+- [ ] **M1 · Data.** Research: daily prices via `yfinance` to CSV, a C++ CSV parser. *Done when:* 10 years of data for several tickers loads.
+- [ ] **M2 · Event engine.** Research: `std::variant` for events (market, signal, order, fill), `std::visit`, an event queue. *Done when:* the loop processes all data with no strategy attached.
+- [ ] **M3 · Strategy and portfolio.** Research: a strategy interface (virtual class or C++20 concept), moving-average crossover, PnL and position tracking. *Done when:* an equity curve.
+- [ ] **M4 · Realism.** Research: commissions, slippage, look-ahead bias (write a test that catches it). *Done when:* equity curves with and without costs side by side.
+- [ ] **M5 · Python analysis.** Research: exposing the engine via nanobind, Sharpe ratio, max drawdown, walk-forward validation. *Done when:* a notebook report with an honest section on overfitting risk.
 
-*Al terminar deberías poder explicar:* qué es look-ahead bias; por qué un Sharpe alto en backtest suele ser mentira.
+*Review questions:* What is look-ahead bias? Why is a high backtested Sharpe ratio usually misleading?
 
-## Data science (sábados, 1 h)
+## Data science track (Saturdays, 1 h)
 
-Data science no se hace en C++, así que va como hilo paralelo en Python: 26 sesiones de sábado siguiendo *ISLP*, cada bloque con un mini-proyecto. A partir de la semana 18, los datos salen de tus propios simuladores, y ahí el C++ y el data science se juntan.
+Data science work happens in Python, so it runs as a parallel track: 26 Saturday sessions following *ISLP*, each block ending in a mini-project. From week 18 on, the datasets come from the C++ simulators and engines built in the main roadmap, so the two tracks converge.
 
-| Sábados | Tema (ISLP) | Mini-proyecto |
+| Saturdays | Topic | Mini-project |
 | --- | --- | --- |
-| 1–4 | pandas, limpieza, EDA (McKinney caps. 5–10) | EDA de ventas de las ferreterías: estacionalidad, top productos, tickets |
-| 5–8 | Regresión lineal y clasificación (ISLP caps. 3–4) | Predecir demanda semanal por categoría de producto |
-| 9–12 | Resampling y regularización (caps. 5–6) | Validación cruzada bien hecha + Ridge/Lasso sobre el mismo problema |
-| 13–17 | Árboles, random forest, boosting (cap. 8) | Comparar contra el modelo lineal; importancia de variables |
-| 18–21 | Surrogate models | Entrena un modelo que prediga Cl/Cd de P8 a partir de α y Re: un "ML para CFD" de portafolio |
-| 22–26 | Series de tiempo y validación financiera (López de Prado caps. 4 y 7) | Features y etiquetas para P12; validación cruzada purgada en vez de split aleatorio |
+| 1–4 | pandas, cleaning, EDA (McKinney ch. 5–10) | EDA of retail sales data from a hardware-store business: seasonality, top products, basket size |
+| 5–8 | Linear regression and classification (ISLP ch. 3–4) | Weekly demand forecast by product category |
+| 9–12 | Resampling and regularization (ch. 5–6) | Proper cross-validation plus Ridge/Lasso on the same problem |
+| 13–17 | Trees, random forests, boosting (ch. 8) | Benchmark against the linear model; feature importance |
+| 18–21 | Surrogate modeling | Train a model that predicts P8's Cl/Cd from α and Re: an ML-for-CFD portfolio piece |
+| 22–26 | Time series and financial validation (López de Prado ch. 4 and 7) | Features and labels for P12; purged cross-validation instead of random splits |
 
-Si el objetivo es entrevistar en data science, añade en las semanas 20–26 un problema de SQL y uno de probabilidad por sesión.
+For data science interview preparation, add one SQL and one probability problem per session during weeks 20–26.
 
-## Lo que tendrás en abril 2027
+## Outcomes (April 2027)
 
-Tres piezas de portafolio, una por cada dirección:
+Three portfolio pieces, one per career direction:
 
-- **Aerodinámica:** solver LBM en GPU (CUDA + Metal) con validación contra tu solver de Julia en NACA 4412. Refuerza directamente la aplicación a la maestría en Southampton.
-- **Quant:** pricer Monte Carlo en GPU con reducción de varianza + backtester event-driven en C++ usable desde Python.
-- **Data science:** surrogate model de aerodinámica y análisis de demanda con datos reales del negocio familiar.
+- **Aerospace / CFD:** a GPU Lattice Boltzmann solver (CUDA + Metal), validated against an independent finite-difference Navier-Stokes solver (Julia) on the NACA 4412 airfoil.
+- **Quant:** a GPU Monte Carlo pricer with variance reduction, plus an event-driven C++ backtester and limit order book, exposed to Python.
+- **Data science:** an aerodynamic surrogate model and a demand-forecasting analysis on real retail data.
 
-**Después de las 26 semanas**, según qué dirección te jale más: LBM en 3D y mallas no estructuradas (CFD), o microestructura de mercado y C++ de baja latencia (quant). Esa decisión es más fácil de tomar con los proyectos ya hechos.
+**Beyond week 26**, depending on direction: 3D LBM and unstructured meshes (CFD), or market microstructure and low-latency C++ (quant).
