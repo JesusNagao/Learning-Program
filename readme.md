@@ -1,6 +1,8 @@
-# C++ & GPU Computing Roadmap: CFD, Quant Finance and Data Science
+# Readme
 
 Oct 21, 2026 · @Jesus Leobardo Nagao
+
+Recently I took an interest in learning C++ for Fluid Mechanics, Data Science and Finance. This is a learning program put together by Claude to achieve it.
 
 ## Summary
 
